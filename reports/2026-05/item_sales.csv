@@ -1,0 +1,47 @@
+Item,Category,Group,Add-on,Units Sold,Sub-Total,Discount,Net
+Signature Holistic Facial,Facials,Service,No,82,11890.00,888.36,11001.64
+HydraFacial,Facials,Service,No,51,10149.00,434.76,9714.24
+Microcurrent Lift Facial,Facials,Service,No,28,4900.00,158.09,4741.91
+Express Glow Facial,Facials,Service,No,42,3570.00,159.89,3410.11
+Teen Clarity Facial,Facials,Service,No,13,975.00,39.68,935.32
+Enzyme Peel,Skin Peels,Service,No,21,1995.00,157.19,1837.81
+Lactic Brightening Peel,Skin Peels,Service,No,13,1560.00,70.83,1489.17
+Swedish Massage 60 min,Massage,Service,No,78,9750.00,340.03,9409.97
+Swedish Massage 90 min,Massage,Service,No,40,7000.00,517.02,6482.98
+Deep Tissue Massage 60 min,Massage,Service,No,55,7425.00,463.74,6961.26
+Hot Stone Massage 90 min,Massage,Service,No,23,4370.00,289.20,4080.80
+Aromatherapy Massage 60 min,Massage,Service,No,35,4550.00,244.40,4305.60
+Prenatal Massage 60 min,Massage,Service,No,17,2210.00,109.74,2100.26
+Couples Massage 60 min,Massage,Service,No,17,4420.00,249.67,4170.33
+Botanical Body Scrub,Body Treatments,Service,No,18,2160.00,130.15,2029.85
+Detox Clay Wrap,Body Treatments,Service,No,12,1800.00,92.24,1707.76
+"Sauna, Soak + Steam (2 hr, per person)","Sauna, Soak + Steam",Service,No,37,7955.00,532.04,7422.96
+"Facial & Soak Ritual (2 hr, per person)","Sauna, Soak + Steam",Service,No,14,3248.00,142.96,3105.04
+"Scrub Flight & Soak Ritual (2 hr, per person)","Sauna, Soak + Steam",Service,No,13,3016.00,190.23,2825.77
+Extra Hour in the Studio,"Sauna, Soak + Steam",Service,Yes,10,1000.00,47.68,952.32
+Natural Manicure,Hands + Feet,Service,No,36,1980.00,72.71,1907.29
+Spa Pedicure,Hands + Feet,Service,No,51,3825.00,269.44,3555.56
+Gel Polish Upgrade,Hands + Feet,Service,Yes,27,540.00,33.58,506.42
+Brow Wax,Hair Removal,Service,No,48,1344.00,94.03,1249.97
+Bikini Wax,Hair Removal,Service,No,26,1430.00,103.06,1326.94
+Brazilian Wax,Hair Removal,Service,No,34,2550.00,126.53,2423.47
+Full Leg Wax,Hair Removal,Service,No,15,1275.00,48.71,1226.29
+Lash Lift & Tint,Lashes + Brows,Service,No,33,3135.00,229.99,2905.01
+Brow Lamination,Lashes + Brows,Service,No,23,1955.00,93.48,1861.52
+Brow Tint,Lashes + Brows,Service,Yes,23,575.00,19.33,555.67
+Scalp Massage Add-on,Add-ons,Service,Yes,62,1550.00,79.96,1470.04
+CBD Oil Upgrade,Add-ons,Service,Yes,41,820.00,39.19,780.81
+LED Light Therapy Add-on,Add-ons,Service,Yes,33,1155.00,54.75,1100.25
+Tarot Reading (30 min),Tarot + Astrology,Service,No,15,975.00,55.39,919.61
+Birth Chart Reading (60 min),Tarot + Astrology,Service,No,8,760.00,29.43,730.57
+Rosehip Face Serum,Skincare,Retail,No,30,2040.00,142.43,1897.57
+Gentle Oat Cleanser,Skincare,Retail,No,34,1156.00,96.04,1059.96
+Daily Barrier Moisturizer,Skincare,Retail,No,24,1248.00,108.91,1139.09
+Mineral SPF 30,Skincare,Retail,No,29,1102.00,71.37,1030.63
+Lavender Body Oil,Bath + Body,Retail,No,20,840.00,82.41,757.59
+Mineral Bath Soak,Bath + Body,Retail,No,21,588.00,53.44,534.56
+Whipped Body Butter,Bath + Body,Retail,No,17,612.00,45.25,566.75
+Non-Toxic Nail Polish,Nails,Retail,No,34,476.00,21.13,454.87
+Cuticle Oil,Nails,Retail,No,16,288.00,21.04,266.96
+Soy Botanical Candle,Home + Gifts,Retail,No,26,988.00,86.23,901.77
+Self-Care Gift Set,Home + Gifts,Retail,No,12,1020.00,58.89,961.11

@@ -1,0 +1,12 @@
+Provider,Role,Appointments,Hours Booked,Hours Available,Service Sales,Retail Sales,Rebooked
+Ava Lindqvist,Esthetician,115,102,120,15644.00,546.32,41
+Luna Okafor,Esthetician,94,83.25,101,12787.00,376.59,32
+Mae Torres,Esthetician,81,72.25,93,11282.00,233.03,30
+Marco Bell,Massage Therapist,100,119.25,142,15290.00,154.49,38
+Priya Shah,Massage Therapist,87,105.25,137,13490.00,98.67,32
+Jess Moreau,Massage Therapist,74,90.75,109,11560.00,108.29,28
+Sage Nguyen,Nail Technician,64,61.25,77,4580.00,365.69,26
+Wren Castillo,Lash & Brow Artist,85,55.75,70,5733.00,415.03,31
+Rowan Hale,Tarot Reader,23,15.5,20,1735.00,0.00,9
+Retreat Studio,Self-guided,91,0,0,21343.00,0.00,38
+Front Desk,Front Desk,0,0,0,0.00,7106.89,0

@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+coverage/
+.netlify/
+*.tsbuildinfo
+next-env.d.ts
+.env*.local
+.env
+.DS_Store
+test-results/
+screenshots/
+.claude/pipeline/
+.claude/agents/
