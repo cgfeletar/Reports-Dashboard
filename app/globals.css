@@ -56,3 +56,16 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Non-selected value labels are the first thing to go when the chart is narrow. */
+@media (max-width: 559px) {
+  .chart-label-secondary {
+    display: none;
+  }
+}
+
+@media (max-width: 419px) {
+  .chart-x-tick {
+    font-size: 10px;
+  }
+}

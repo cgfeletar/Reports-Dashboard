@@ -11,7 +11,7 @@ describe("ChartCard", () => {
         <div>chart</div>
       </ChartCard>,
     );
-    const btn = screen.getByRole("button", { name: "View data" });
+    const btn = screen.getByRole("button", { name: "View data for Net sales" });
     const target = container.querySelector(`[id="${btn.getAttribute("aria-controls")}"]`);
     expect(target).toBeInTheDocument();
     expect(target).toHaveAttribute("hidden");
@@ -19,7 +19,7 @@ describe("ChartCard", () => {
 
     await userEvent.click(btn);
     expect(target).not.toHaveAttribute("hidden");
-    expect(screen.getByRole("button", { name: "Hide data" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Hide data for Net sales" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("rowheader", { name: "Oct" })).toBeInTheDocument();
   });
 

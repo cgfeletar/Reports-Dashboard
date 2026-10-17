@@ -15,13 +15,20 @@ import {
   formatCount,
   formatCurrency,
   formatCurrencyCompact,
-  formatMonthTick,
   formatPercent,
 } from "@/lib/format";
 import type { MonthKey } from "@/lib/reports-types";
 import type { MonthRow, Series, ValueKind } from "./types";
 
 export const DEFAULT_HEIGHT = 260;
+
+/** Stroke would swallow segments this short (px), turning them into white lines. */
+const MIN_STROKED_HEIGHT = 4;
+
+/** Width the plot loses to the y-axis and horizontal margins. */
+export function reservedWidth(y: { width: number }, marginRight: number): number {
+  return y.width + marginRight;
+}
 
 /** Compact format for ticks and bar labels. */
 export function formatCompact(value: number, kind: ValueKind): string {
@@ -104,6 +111,7 @@ export interface YAxisConfig {
   ticks: number[];
   tickFormatter: (value: number) => string;
   width: number;
+  interval: 0;
   allowDataOverflow: false;
   axisLine: false;
   tickLine: false;
@@ -121,22 +129,13 @@ export function yAxisConfig({ max, valueKind, integer, percentAxis, small }: YAx
     tickFormatter: (value) =>
       valueKind === "percent" ? formatPercent(value, wholePercents ? 0 : 1) : formatCompact(value, valueKind),
     width: (small ? SMALL_AXIS_WIDTH : AXIS_WIDTH)[valueKind],
+    interval: 0,
     allowDataOverflow: false,
     axisLine: false,
     tickLine: false,
     tick: small ? { ...AXIS_TICK, fontSize: 10 } : AXIS_TICK,
   };
 }
-
-export const X_AXIS_PROPS = {
-  dataKey: "month",
-  interval: 0,
-  axisLine: false,
-  tickLine: false,
-  tick: AXIS_TICK,
-  tickMargin: 6,
-  tickFormatter: (month: MonthKey, index: number): string => formatMonthTick(month, index),
-} as const;
 
 export function Grid(): ReactElement {
   return <CartesianGrid vertical={false} stroke={LINE} />;
@@ -177,14 +176,15 @@ export function barShape({ selectedMonth, rounded, stroked }: BarShapeOptions) {
     const { x, y, width, height, fill, payload } = props;
     if (!(height > 0) || !(width > 0)) return null;
     const row = payload as MonthRow | undefined;
+    const stroke = stroked && height >= MIN_STROKED_HEIGHT;
     const round = !rounded || !row || rounded(row);
     return (
       <path
         d={roundedTopPath(x, y, width, height, round ? BAR_RADIUS : 0)}
         fill={fill}
         fillOpacity={isSelected(row, selectedMonth) ? 1 : DIM_OPACITY}
-        stroke={stroked ? SEGMENT_STROKE : "none"}
-        strokeWidth={stroked ? 2 : 0}
+        stroke={stroke ? SEGMENT_STROKE : "none"}
+        strokeWidth={stroke ? 2 : 0}
       />
     );
   };

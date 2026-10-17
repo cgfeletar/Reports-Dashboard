@@ -79,7 +79,26 @@ describe("loadReports", () => {
     fs.mkdirSync(path.join(root, "2026-3"));
     fs.mkdirSync(path.join(root, "2026-01-extra"));
     fs.writeFileSync(path.join(root, "2026-05"), "a file, not a folder");
-    expect(loadReports({ root }).map((r) => r.month)).toEqual(["2025-12", "2026-01", "2026-03"]);
+    expect(loadReports({ root }).map((r) => r.month)).toEqual(["2025-12", "2026-01", "2026-02", "2026-03"]);
+  });
+
+  it("fills skipped months with an all-null report and warns", () => {
+    for (const m of ["2025-11", "2026-02"]) write(m, "clients.json", '{"new_clients":1,"returning_clients":2,"total_clients":3}');
+    const reports = loadReports({ root });
+    expect(reports.map((r) => r.month)).toEqual(["2025-11", "2025-12", "2026-01", "2026-02"]);
+    expect(reports[1]).toEqual({
+      month: "2025-12",
+      sales: null,
+      categories: null,
+      items: null,
+      providers: null,
+      clients: null,
+      rebooking: null,
+      memberships: null,
+    });
+    expect(reports[0]?.clients).not.toBeNull();
+    expect(warn).toHaveBeenCalledWith("[Reports] missing month folder 2025-12");
+    expect(warn).toHaveBeenCalledWith("[Reports] missing month folder 2026-01");
   });
 
   it("returns [] and warns when the root is missing", () => {

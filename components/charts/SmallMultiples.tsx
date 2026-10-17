@@ -6,14 +6,14 @@
  */
 import type { ReactElement } from "react";
 import { Bar, BarChart, LabelList, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AXIS_TICK, BAR_MAX_SIZE, LINE, LINE_STROKE_WIDTH, SEGMENT_STROKE, SINGLE_SERIES } from "@/lib/chart-theme";
-import { formatMonthShort } from "@/lib/format";
+import { BAR_MAX_SIZE, LINE, LINE_STROKE_WIDTH, SEGMENT_STROKE, SINGLE_SERIES } from "@/lib/chart-theme";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { MonthKey } from "@/lib/reports-types";
 import { barLabelContent } from "./BarLabels";
 import { ChartTooltip } from "./ChartTooltip";
 import { lineDot } from "./MonthlyLineChart";
-import { barShape, Grid, maxOfKeys, yAxisConfig } from "./shared";
+import { barShape, Grid, maxOfKeys, reservedWidth, yAxisConfig } from "./shared";
+import { labelsFit, useChartSlot, xAxisProps } from "./ticks";
 import type { MonthRow, ValueKind } from "./types";
 
 export interface SmallMultiplePanel {
@@ -34,25 +34,18 @@ export interface SmallMultiplesProps {
   percentAxis?: boolean;
   /** Bars only: row key with unit counts, shown as `(14)` under the value label. */
   labelUnitsKey?: string;
-  columns?: "sm2-lg3" | "sm2";
+  /** `lg2`: one column until lg, then two. */
+  columns?: "sm2-lg3" | "sm2" | "lg2";
   panelHeight?: number;
 }
 
 const GRID_CLASS: Record<NonNullable<SmallMultiplesProps["columns"]>, string> = {
   "sm2-lg3": "grid grid-cols-1 gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-3",
   sm2: "grid grid-cols-1 gap-x-6 gap-y-7 sm:grid-cols-2",
+  lg2: "grid grid-cols-1 gap-x-6 gap-y-7 lg:grid-cols-2",
 };
 
-const SMALL_X_AXIS = {
-  dataKey: "month",
-  interval: 0,
-  axisLine: false,
-  tickLine: false,
-  tick: { ...AXIS_TICK, fontSize: 10 },
-  tickMargin: 4,
-  // No year here: "Oct '25" is wider than a 12-month slot in a third-width panel.
-  tickFormatter: (month: MonthKey): string => formatMonthShort(month),
-} as const;
+const MARGIN_RIGHT = 14;
 
 export function SmallMultiples({
   panels,
@@ -65,12 +58,17 @@ export function SmallMultiples({
   percentAxis = false,
   labelUnitsKey,
   columns = "sm2-lg3",
-  panelHeight = 150,
+  panelHeight = 160,
 }: SmallMultiplesProps): ReactElement {
   const reduced = useReducedMotion();
   const globalMax = Math.max(0, ...panels.map((p) => maxOfKeys(p.data, [valueKey])));
   const labelled = kind === "bar" && labelUnitsKey !== undefined;
   const topMargin = labelled ? 34 : 10;
+  const firstData = panels[0]?.data ?? [];
+  const yReference = yAxisConfig({ max: 0, valueKind, integer, percentAxis, small: true });
+  // Panels share one width, so any panel's resize event measures them all.
+  const { slotPx, onResize } = useChartSlot(firstData.length, reservedWidth(yReference, MARGIN_RIGHT));
+  const xAxis = xAxisProps({ slotPx, small: true });
 
   return (
     <div className={GRID_CLASS[columns]}>
@@ -90,15 +88,15 @@ export function SmallMultiples({
             )}
           />
         );
-        const margin = { top: topMargin, right: 6, bottom: 0, left: 0 };
+        const margin = { top: topMargin, right: MARGIN_RIGHT, bottom: 0, left: 0 };
         return (
           <div key={panel.id} className="min-w-0">
             <h4 className="mb-1 text-[13px] font-medium text-ink">{panel.title}</h4>
-            <ResponsiveContainer width="100%" height={panelHeight + (labelled ? 24 : 0)}>
+            <ResponsiveContainer width="100%" height={panelHeight + (labelled ? 24 : 0)} onResize={onResize}>
               {kind === "bar" ? (
                 <BarChart data={panel.data} margin={margin}>
                   <Grid />
-                  <XAxis {...SMALL_X_AXIS} />
+                  <XAxis {...xAxis} />
                   <YAxis {...y} />
                   {tooltip}
                   <Bar
@@ -118,6 +116,7 @@ export function SmallMultiples({
                           selectedMonth,
                           unitsKey: labelUnitsKey,
                           fontSize: 9,
+                          hideSecondary: !labelsFit(slotPx, true),
                         })}
                       />
                     )}
@@ -126,7 +125,7 @@ export function SmallMultiples({
               ) : (
                 <LineChart data={panel.data} margin={margin}>
                   <Grid />
-                  <XAxis {...SMALL_X_AXIS} />
+                  <XAxis {...xAxis} />
                   <YAxis {...y} />
                   {tooltip}
                   <Line

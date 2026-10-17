@@ -11,7 +11,8 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { MonthKey } from "@/lib/reports-types";
 import { barLabelContent } from "./BarLabels";
 import { ChartTooltip } from "./ChartTooltip";
-import { barShape, DEFAULT_HEIGHT, Grid, maxOfKeys, X_AXIS_PROPS, yAxisConfig } from "./shared";
+import { barShape, DEFAULT_HEIGHT, Grid, maxOfKeys, reservedWidth, yAxisConfig } from "./shared";
+import { labelsFit, useChartSlot, xAxisProps } from "./ticks";
 import type { MonthRow, Series, ValueKind } from "./types";
 
 export interface MonthlyBarChartProps {
@@ -36,11 +37,13 @@ export function MonthlyBarChart({
   const reduced = useReducedMotion();
   const y = yAxisConfig({ max: maxOfKeys(data, [series.key]), valueKind, integer });
 
+  const { slotPx, onResize } = useChartSlot(data.length, reservedWidth(y, 8));
+
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={height} onResize={onResize}>
       <BarChart data={data} margin={{ top: showValueLabels ? 18 : 8, right: 8, bottom: 0, left: 0 }}>
         <Grid />
-        <XAxis {...X_AXIS_PROPS} />
+        <XAxis {...xAxisProps({ slotPx })} />
         <YAxis {...y} />
         <Tooltip
           cursor={{ fill: LINE, fillOpacity: 0.5 }}
@@ -56,7 +59,13 @@ export function MonthlyBarChart({
         >
           {showValueLabels && (
             <LabelList
-              content={barLabelContent({ data, valueKey: series.key, valueKind, selectedMonth })}
+              content={barLabelContent({
+                data,
+                valueKey: series.key,
+                valueKind,
+                selectedMonth,
+                hideSecondary: !labelsFit(slotPx, false),
+              })}
             />
           )}
         </Bar>

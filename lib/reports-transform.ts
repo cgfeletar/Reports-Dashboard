@@ -61,7 +61,7 @@ function utilization(r: MonthReport): number | null {
 
 export interface Kpi {
   value: number | null;
-  /** The month immediately before in the array; null for the first month. */
+  /** The previous calendar month; null when that month is absent. */
   previous: number | null;
   changeKind: "relative" | "points";
 }
@@ -85,10 +85,20 @@ export interface Kpis {
   };
 }
 
+/** The calendar month before `month` ("2025-01" → "2024-12"); null if `month` isn't YYYY-MM. */
+export function previousMonthKey(month: MonthKey): MonthKey | null {
+  const match = /^(\d{4})-(\d{2})$/.exec(month);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const m = Number(match[2]);
+  if (m < 1 || m > 12) return null;
+  return m === 1 ? `${year - 1}-12` : `${year}-${String(m - 1).padStart(2, "0")}`;
+}
+
 export function buildKpis(reports: MonthReport[], month: MonthKey): Kpis {
-  const index = reports.findIndex((r) => r.month === month);
-  const current = reports[index];
-  const prior = index > 0 ? reports[index - 1] : undefined;
+  const current = reports.find((r) => r.month === month);
+  const priorKey = previousMonthKey(month);
+  const prior = priorKey ? reports.find((r) => r.month === priorKey) : undefined;
   const kpi = (fn: (r: MonthReport) => number | null, changeKind: Kpi["changeKind"] = "relative"): Kpi => ({
     value: current ? fn(current) : null,
     previous: prior ? fn(prior) : null,
@@ -146,6 +156,11 @@ export function discountRateSeries(reports: MonthReport[]): MonthRow[] {
     const base = s && s.serviceSales != null && s.retailSales != null ? s.serviceSales + s.retailSales : null;
     return row(r.month, { rate: ratio(s?.discounts ?? null, base) });
   });
+}
+
+/** Rows `{ month, value }`: retail sales / total clients. */
+export function retailPerClientSeries(reports: MonthReport[]): MonthRow[] {
+  return reports.map((r) => row(r.month, { value: ratio(retailSales(r), totalClients(r)) }));
 }
 
 // ── C. Categories ───────────────────────────────────────────────────────────
@@ -210,10 +225,11 @@ export function categoryMixForMonth(
     const found = rows.filter((c) => c.category === name);
     if (found.length === 0) return;
     const value = sum(found.map((c) => c.subTotal));
+    if (value <= 0) return;
     slices.push({ key: categoryKey(i), name, value, share: total === 0 ? 0 : value / total, color: categoricalColor(i) });
   });
   const other = sum(rows.filter((c) => !ranked.includes(c.category)).map((c) => c.subTotal));
-  if (rows.some((c) => !ranked.includes(c.category))) {
+  if (other > 0) {
     slices.push({ key: OTHER_KEY, name: OTHER_LABEL, value: other, share: total === 0 ? 0 : other / total, color: OTHER_COLOR });
   }
   return { slices, total };
@@ -243,20 +259,54 @@ export interface CategoryPanel {
   data: { month: MonthKey; value: number | null; units: number | null }[];
 }
 
-/** One panel per category of `group` (all of them, ordered by rank) for small multiples. */
-export function categoryUnitsPanels(reports: MonthReport[], group: SalesGroup): CategoryPanel[] {
-  return rankAll(reports, group).map((name, i) => ({
-    id: `${group.toLowerCase()}-${i}`,
-    title: name,
-    color: categoricalColor(i),
-    data: reports.map((r) => {
-      const rows = groupRows(r, group);
-      if (!rows) return { month: r.month, value: null, units: null };
-      const found = rows.filter((c) => c.category === name);
-      const units = sum(found.map((c) => c.units));
-      return { month: r.month, value: group === "Retail" ? sum(found.map((c) => c.subTotal)) : units, units };
-    }),
-  }));
+const ADD_ON_NAME = /add-?ons?/i;
+
+/**
+ * Categories that only hold add-ons (every known item is `isAddOn`). Add-ons ride
+ * along with an appointment, so they aren't bookings. Falls back to a name match
+ * for categories with no item rows (or no item file).
+ */
+export function addOnCategories(reports: MonthReport[], group: SalesGroup): Set<string> {
+  const itemsByCategory = new Map<string, boolean[]>();
+  for (const r of reports) {
+    for (const i of r.items ?? []) {
+      if (i.group !== group) continue;
+      itemsByCategory.set(i.category, [...(itemsByCategory.get(i.category) ?? []), i.isAddOn]);
+    }
+  }
+  const result = new Set<string>();
+  for (const name of rankAll(reports, group)) {
+    const flags = itemsByCategory.get(name);
+    if (flags && flags.length > 0 ? flags.every(Boolean) : ADD_ON_NAME.test(name)) result.add(name);
+  }
+  return result;
+}
+
+/**
+ * One panel per category of `group` (ordered by rank) for small multiples.
+ * `excludeAddOns` drops add-on-only categories; colors still follow the overall rank.
+ */
+export function categoryUnitsPanels(
+  reports: MonthReport[],
+  group: SalesGroup,
+  options: { excludeAddOns?: boolean } = {},
+): CategoryPanel[] {
+  const excluded = options.excludeAddOns ? addOnCategories(reports, group) : new Set<string>();
+  return rankAll(reports, group)
+    .map((name, i) => ({ name, i }))
+    .filter(({ name }) => !excluded.has(name))
+    .map(({ name, i }) => ({
+      id: `${group.toLowerCase()}-${i}`,
+      title: name,
+      color: categoricalColor(i),
+      data: reports.map((r) => {
+        const rows = groupRows(r, group);
+        if (!rows) return { month: r.month, value: null, units: null };
+        const found = rows.filter((c) => c.category === name);
+        const units = sum(found.map((c) => c.units));
+        return { month: r.month, value: group === "Retail" ? sum(found.map((c) => c.subTotal)) : units, units };
+      }),
+    }));
 }
 
 function addOnUnits(items: ItemSale[]): number {
@@ -276,19 +326,26 @@ export function addOnAttachRateSeries(reports: MonthReport[]): MonthRow[] {
 
 // ── D. Studio ───────────────────────────────────────────────────────────────
 
+const SAUNA = /sauna/i;
+
 /**
- * Rows `{ month, guests }`: units of the Service category matching /sauna/i.
- * When item sales exist, add-on items (the "Extra Hour in the Studio") are
- * excluded so guests are people, not extra hours; otherwise the category units.
+ * Rows `{ month, guests }`. Best source first: non-add-on Service items in the
+ * /sauna/i category (add-ons such as the "Extra Hour in the Studio" are hours,
+ * not people), then the Self-guided provider's appointments, then the sauna
+ * category's units. A month with no usable source is a gap; a category file
+ * with no sauna row means 0.
  */
 export function studioGuestsSeries(reports: MonthReport[]): MonthRow[] {
   return reports.map((r) => {
-    const category = r.categories?.find((c) => c.group === "Service" && /sauna/i.test(c.category));
+    const saunaItems = (r.items ?? []).filter((i) => i.group === "Service" && SAUNA.test(i.category));
+    if (saunaItems.length > 0) {
+      return row(r.month, { guests: sum(saunaItems.filter((i) => !i.isAddOn).map((i) => i.units)) });
+    }
+    const selfGuided = (r.providers ?? []).filter((p) => p.role.trim().toLowerCase() === "self-guided");
+    if (selfGuided.length > 0) return row(r.month, { guests: sum(selfGuided.map((p) => p.appointments)) });
     if (!r.categories) return row(r.month, { guests: null });
-    if (!category) return row(r.month, { guests: 0 });
-    if (!r.items) return row(r.month, { guests: category.units });
-    const units = sum(r.items.filter((i) => i.category === category.category && !i.isAddOn).map((i) => i.units));
-    return row(r.month, { guests: units });
+    const category = r.categories.find((c) => c.group === "Service" && SAUNA.test(c.category));
+    return row(r.month, { guests: category?.units ?? 0 });
   });
 }
 

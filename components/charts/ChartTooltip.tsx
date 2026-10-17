@@ -68,7 +68,9 @@ export function ChartTooltip({
         <p className="mt-1.5 flex border-t border-line pt-1.5 font-medium">
           <span>Total</span>
           <span className="ml-auto pl-3 tabular-nums">
-            {known.length === 0 ? EMPTY : formatFull(known.reduce((a, b) => a + b, 0), valueKind)}
+            {known.length === 0
+              ? EMPTY
+              : `${formatFull(known.reduce((a, b) => a + b, 0), valueKind)}${known.length < numbers.length ? " (partial)" : ""}`}
           </span>
         </p>
       )}

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { StatTile } from "./StatTile";
+import { NO_CHANGE_TEXT, StatTile } from "./StatTile";
 
 describe("StatTile", () => {
   it("renders value, change text, default suffix and hint", () => {
@@ -18,7 +18,7 @@ describe("StatTile", () => {
 
   it("shows the empty state when change is null", () => {
     render(<StatTile label="L" value="1" change={null} />);
-    expect(screen.getByText("No prior month")).toBeInTheDocument();
+    expect(screen.getByText(NO_CHANGE_TEXT)).toBeInTheDocument();
     expect(screen.queryByText("vs. last month")).not.toBeInTheDocument();
   });
 });

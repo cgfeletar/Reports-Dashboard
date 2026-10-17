@@ -6,12 +6,11 @@
  */
 import { useMemo } from "react";
 import { DonutChart, MonthlyLineChart, SmallMultiples, StackedBarChart } from "@/components/charts";
-import type { SmallMultiplePanel } from "@/components/charts";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { ChartGrid, fullWidthClass } from "@/components/ui/ChartGrid";
 import { Section } from "@/components/ui/Section";
 import { SINGLE_SERIES } from "@/lib/chart-theme";
-import { formatCount, formatCurrency, formatCurrencyCompact, formatMonthLong, formatPercent } from "@/lib/format";
+import { formatCount, formatCurrency, formatCurrencyWhole, formatMonthLong, formatPercent } from "@/lib/format";
 import {
   addOnAttachRateSeries,
   categoryMixForMonth,
@@ -21,23 +20,21 @@ import {
   rankCategories,
 } from "@/lib/reports-transform";
 import type { MonthKey, MonthReport } from "@/lib/reports-types";
-import { cell, findReport, GAP, seriesTable } from "./section-utils";
+import { cell, findReport, GAP, seriesTable, toPanels } from "./section-utils";
 
 interface ServicesSectionProps {
   reports: MonthReport[];
   selectedMonth: MonthKey;
 }
 
-const ATTACH_SERIES = [{ key: "rate", name: "Add-ons per appointment", color: SINGLE_SERIES }];
+const ATTACH_SERIES = [{ key: "rate", name: "Add-on attach rate", color: SINGLE_SERIES }];
 
 export function ServicesSection({ reports, selectedMonth }: ServicesSectionProps): React.JSX.Element {
   // Ranked once across all months so each category keeps its color everywhere.
   const ranked = useMemo(() => rankCategories(reports, "Service", 6), [reports]);
   const series = useMemo(() => categorySeries(reports, "Service", ranked), [reports, ranked]);
   const sales = useMemo(() => categorySalesSeries(reports, "Service", ranked), [reports, ranked]);
-  const panels = useMemo(() => categoryUnitsPanels(reports, "Service"), [reports]);
-  // MonthRow's intersection type can't be satisfied by a literal; see phase1-api notes.
-  const chartPanels = panels as unknown as SmallMultiplePanel[];
+  const panels = useMemo(() => categoryUnitsPanels(reports, "Service", { excludeAddOns: true }), [reports]);
   const attach = useMemo(() => addOnAttachRateSeries(reports), [reports]);
   const report = findReport(reports, selectedMonth);
   const mix = useMemo(
@@ -70,11 +67,15 @@ export function ServicesSection({ reports, selectedMonth }: ServicesSectionProps
           caption="The biggest categories get their own color; smaller ones are grouped as Other."
           table={mixTable}
         >
-          <DonutChart
-            slices={mix.slices}
-            centerValue={mix.total === null ? GAP : formatCurrencyCompact(mix.total)}
-            centerLabel="service sales"
-          />
+          {mix.slices.length > 0 ? (
+            <DonutChart
+              slices={mix.slices}
+              centerValue={mix.total === null ? GAP : formatCurrencyWhole(mix.total)}
+              centerLabel="service sales"
+            />
+          ) : (
+            <p className="text-sm font-light text-ink-soft">No service sales were recorded for {monthLabel}.</p>
+          )}
         </ChartCard>
         <ChartCard
           title="Service sales by month"
@@ -87,12 +88,12 @@ export function ServicesSection({ reports, selectedMonth }: ServicesSectionProps
         <ChartCard
           className={fullWidthClass}
           title="Bookings by category"
-          subtitle="Number of services booked each month. Each panel has its own scale — compare shape over time, not height across panels."
-          caption="Each panel has its own scale — compare shape over time, not height across panels."
+          subtitle="Number of services booked each month, by category"
+          caption="Each panel has its own scale — compare shape over time, not height across panels. Add-ons are not counted here because they ride along with an appointment; see the attach rate below."
           table={bookingsTable}
         >
           <SmallMultiples
-            panels={chartPanels}
+            panels={toPanels(panels)}
             kind="bar"
             valueKind="count"
             selectedMonth={selectedMonth}
@@ -104,8 +105,8 @@ export function ServicesSection({ reports, selectedMonth }: ServicesSectionProps
         <ChartCard
           className={fullWidthClass}
           title="Add-on attach rate"
-          subtitle="Add-on services per appointment — your upsell metric"
-          caption="1.0 would mean one add-on for every appointment."
+          subtitle="Add-ons sold per appointment — your upsell metric"
+          caption="100% would mean one add-on for every appointment."
           table={seriesTable(attach, ATTACH_SERIES, "percent")}
         >
           <MonthlyLineChart data={attach} series={ATTACH_SERIES} selectedMonth={selectedMonth} valueKind="percent" />

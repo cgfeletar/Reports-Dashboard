@@ -11,7 +11,8 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { MonthKey } from "@/lib/reports-types";
 import { ChartLegend } from "./ChartLegend";
 import { ChartTooltip } from "./ChartTooltip";
-import { barShape, DEFAULT_HEIGHT, Grid, maxOfKeys, X_AXIS_PROPS, yAxisConfig } from "./shared";
+import { barShape, DEFAULT_HEIGHT, Grid, maxOfKeys, reservedWidth, yAxisConfig } from "./shared";
+import { useChartSlot, xAxisProps } from "./ticks";
 import type { MonthRow, Series, ValueKind } from "./types";
 
 export interface GroupedBarChartProps {
@@ -32,13 +33,15 @@ export function GroupedBarChart({
   const reduced = useReducedMotion();
   const y = yAxisConfig({ max: maxOfKeys(data, series.map((s) => s.key)), valueKind, integer: valueKind === "count" });
 
+  const { slotPx, onResize } = useChartSlot(data.length, reservedWidth(y, 8));
+
   return (
     <div>
       <ChartLegend items={series} className="mb-3" />
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} onResize={onResize}>
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }} barGap={2}>
           <Grid />
-          <XAxis {...X_AXIS_PROPS} />
+          <XAxis {...xAxisProps({ slotPx })} />
           <YAxis {...y} />
           <Tooltip
             cursor={{ fill: LINE, fillOpacity: 0.5 }}

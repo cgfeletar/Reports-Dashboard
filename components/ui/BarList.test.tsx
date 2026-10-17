@@ -29,4 +29,16 @@ describe("BarList", () => {
     render(<BarList items={[{ id: "z", name: "Z", value: 0, valueLabel: "$0" }]} label="Z" />);
     expect(screen.getByTestId("bar-fill")).toHaveStyle({ width: "0%" });
   });
+
+  it("is a single column by default", () => {
+    render(<BarList items={items} label="Team" />);
+    expect(screen.getByRole("list", { name: "Team" })).not.toHaveClass("lg:columns-2");
+    expect(screen.getAllByRole("listitem")[0]).not.toHaveClass("break-inside-avoid");
+  });
+
+  it("flows into two columns at lg with unbroken items when columns={2}", () => {
+    render(<BarList items={items} label="Team" columns={2} />);
+    expect(screen.getByRole("list", { name: "Team" })).toHaveClass("lg:columns-2", "lg:gap-x-10");
+    for (const li of screen.getAllByRole("listitem")) expect(li).toHaveClass("break-inside-avoid");
+  });
 });

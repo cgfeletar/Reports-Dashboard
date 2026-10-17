@@ -3,7 +3,7 @@ import { cloneElement, type ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ChartLegend } from "./ChartLegend";
 import { ChartTooltip } from "./ChartTooltip";
-import { DonutChart } from "./DonutChart";
+import { DonutChart, sharePercents } from "./DonutChart";
 import { GroupedBarChart } from "./GroupedBarChart";
 import { MonthlyBarChart } from "./MonthlyBarChart";
 import { MonthlyLineChart } from "./MonthlyLineChart";
@@ -99,6 +99,11 @@ describe("ChartTooltip", () => {
     expect(screen.getByText("—")).toBeInTheDocument();
   });
 
+  it("labels the total partial when a value is missing", () => {
+    render(<ChartTooltip active payload={[entry("A", 100), entry("B", null)]} label="2025-10" valueKind="count" total />);
+    expect(screen.getByText("Total").parentElement).toHaveTextContent("100 (partial)");
+  });
+
   it("renders nothing when inactive", () => {
     const { container } = render(<ChartTooltip payload={payload} valueKind="count" />);
     expect(container).toBeEmptyDOMElement();
@@ -128,6 +133,35 @@ describe("DonutChart", () => {
     expect(screen.getByText("$7,500")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
     expect(screen.getByText("25%")).toBeInTheDocument();
+  });
+});
+
+describe("sharePercents", () => {
+  it("sums to exactly 100", () => {
+    for (const values of [[1, 1, 1], [333, 333, 334], [5, 5, 5, 5, 5, 5, 5], [7500, 2500], [1, 99999]]) {
+      expect(sharePercents(values).reduce((a, b) => a + b, 0)).toBe(100);
+    }
+    expect(sharePercents([1, 1, 1])).toEqual([34, 33, 33]);
+  });
+  it("handles an empty total", () => {
+    expect(sharePercents([0, 0])).toEqual([0, 0]);
+  });
+});
+
+describe("DonutChart zero slices", () => {
+  it("omits zero-value slices from the legend", () => {
+    render(
+      <DonutChart
+        centerLabel="Sales"
+        centerValue="$10"
+        slices={[
+          { key: "a", name: "Facials", value: 10, color: "#111" },
+          { key: "b", name: "Gift cards", value: 0, color: "#222" },
+        ]}
+      />,
+    );
+    expect(screen.queryByText("Gift cards")).toBeNull();
+    expect(screen.getByText("100%")).toBeInTheDocument();
   });
 });
 

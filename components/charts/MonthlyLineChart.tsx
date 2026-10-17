@@ -11,7 +11,8 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { MonthKey } from "@/lib/reports-types";
 import { ChartLegend } from "./ChartLegend";
 import { ChartTooltip } from "./ChartTooltip";
-import { DEFAULT_HEIGHT, Grid, isSelected, maxOfKeys, X_AXIS_PROPS, yAxisConfig } from "./shared";
+import { DEFAULT_HEIGHT, Grid, isSelected, maxOfKeys, reservedWidth, yAxisConfig } from "./shared";
+import { useChartSlot, xAxisProps } from "./ticks";
 import type { MonthRow, Series, ValueKind } from "./types";
 
 export interface MonthlyLineChartProps {
@@ -55,13 +56,15 @@ export function MonthlyLineChart({
   const reduced = useReducedMotion();
   const y = yAxisConfig({ max: maxOfKeys(data, series.map((s) => s.key)), valueKind, integer, percentAxis });
 
+  const { slotPx, onResize } = useChartSlot(data.length, reservedWidth(y, 12));
+
   return (
     <div>
       {series.length > 1 && <ChartLegend items={series} className="mb-3" />}
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer width="100%" height={height} onResize={onResize}>
         <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
           <Grid />
-          <XAxis {...X_AXIS_PROPS} />
+          <XAxis {...xAxisProps({ slotPx })} />
           <YAxis {...y} />
           <Tooltip
             content={(p) => <ChartTooltip active={p.active} payload={p.payload} label={p.label} valueKind={valueKind} />}

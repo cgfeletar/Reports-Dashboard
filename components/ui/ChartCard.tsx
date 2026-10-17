@@ -32,8 +32,8 @@ export function ChartCard({ title, subtitle, caption, table, children, className
     <figure
       className={`m-0 min-w-0 rounded-[var(--radius-card)] border border-line bg-white p-6 shadow-[var(--card-shadow)] max-xs:p-4 ${className ?? ""}`}
     >
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-        <div className="min-w-0 flex-1 basis-48">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <h3 className="font-display text-[19px] font-medium leading-snug text-ink">{title}</h3>
           {subtitle ? <p className="mt-1 text-[13px] font-light text-ink-soft">{subtitle}</p> : null}
         </div>
@@ -44,7 +44,10 @@ export function ChartCard({ title, subtitle, caption, table, children, className
           onClick={() => setShowData((v) => !v)}
           className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-line px-3.5 text-xs font-medium text-accent-deep transition-colors hover:bg-accent-tint focus-visible:outline-2 focus-visible:outline-accent"
         >
-          {showData ? "Hide data" : "View data"}
+          <span>
+            {showData ? "Hide data" : "View data"}{" "}
+            <span className="sr-only">for {title}</span>
+          </span>
         </button>
       </div>
 

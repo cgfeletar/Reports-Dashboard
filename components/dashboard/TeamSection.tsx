@@ -14,7 +14,7 @@ import { Section } from "@/components/ui/Section";
 import { formatCurrency, formatCurrencyWhole, formatMonthLong, formatPercent } from "@/lib/format";
 import { teamPerformance, utilizationPanels } from "@/lib/reports-transform";
 import type { MonthKey, MonthReport } from "@/lib/reports-types";
-import { cell, findReport, GAP, toPanels } from "./section-utils";
+import { cell, findReport, toPanels } from "./section-utils";
 
 interface TeamSectionProps {
   reports: MonthReport[];
@@ -71,11 +71,9 @@ export function TeamSection({ reports, selectedMonth }: TeamSectionProps): React
           table={teamTable}
         >
           {items.length > 0 ? (
-            <div className="max-w-3xl">
-              <BarList items={items} label={`Service sales by provider, ${monthLabel}`} />
-            </div>
+            <BarList items={items} label={`Service sales by provider, ${monthLabel}`} columns={2} />
           ) : (
-            <p className="text-sm font-light text-ink-soft">No team data for {monthLabel} {GAP}</p>
+            <p className="text-sm font-light text-ink-soft">No team data for {monthLabel}.</p>
           )}
         </ChartCard>
         <ChartCard

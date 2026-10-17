@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { loadReports } from "./reports-source";
-import { addOnAttachRateSeries, categoryMixForMonth, rankCategories, studioGuestsSeries } from "./reports-transform";
+import { addOnAttachRateSeries, categoryMixForMonth, previousMonthKey, rankCategories, studioGuestsSeries } from "./reports-transform";
 
 const reports = loadReports({ root: "reports" });
 
@@ -58,6 +58,12 @@ describe("real reports/ reconciliation", () => {
 });
 
 describe("transforms on real data", () => {
+  it("loaded months are consecutive calendar months", () => {
+    reports.forEach((r, i) => {
+      if (i > 0) expect(previousMonthKey(r.month)).toBe(reports[i - 1]?.month);
+    });
+  });
+
   it("studio guests match the Self-guided provider's appointments", () => {
     const guests = studioGuestsSeries(reports);
     reports.forEach((r, i) => {

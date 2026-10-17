@@ -30,7 +30,7 @@ export function StudioSection({ reports, selectedMonth }: StudioSectionProps): R
         <ChartCard
           className={fullWidthClass}
           title="Studio guests by month"
-          subtitle="Busiest in winter, quieter in summer."
+          subtitle="Guests booked into the private studio each month."
           caption="Number of guests who booked a studio session. Extra hours are not counted again."
           table={seriesTable(guests, [GUESTS_SERIES], "count")}
         >

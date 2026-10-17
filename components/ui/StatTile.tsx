@@ -1,5 +1,7 @@
 import type { Change } from "@/lib/format";
 
+export const NO_CHANGE_TEXT = "No comparison available";
+
 interface StatTileProps {
   label: string;
   value: string;
@@ -20,7 +22,7 @@ export function StatTile({ label, value, change, changeSuffix = "vs. last month"
             <span className="tabular-nums">{change.text}</span> <span className="font-light text-ink-soft">{changeSuffix}</span>
           </>
         ) : (
-          <span className="font-light text-ink-faint">No prior month</span>
+          <span className="font-light text-ink-faint">{NO_CHANGE_TEXT}</span>
         )}
       </p>
       {hint ? <p className="mt-1 text-xs font-light text-ink-soft">{hint}</p> : null}

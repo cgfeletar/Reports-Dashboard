@@ -62,9 +62,42 @@ export function loadReports(options: LoadReportsOptions = {}): MonthReport[] {
     console.warn(`[Reports] reports folder not found: ${root}`);
     return [];
   }
-  return entries
+  const months = entries
     .filter((e) => e.isDirectory() && MONTH_DIR.test(e.name))
     .map((e) => e.name)
-    .sort()
-    .map((name) => adapter.loadMonth(path.join(root, name)));
+    .sort();
+  const first = months[0];
+  const last = months[months.length - 1];
+  if (!first || !last) return [];
+  const present = new Set(months);
+  const reports: MonthReport[] = [];
+  // Skipped months become all-null reports so charts show a gap, not a jump.
+  for (let key: string | null = first; key !== null && key <= last; key = nextMonthKey(key)) {
+    if (present.has(key)) {
+      reports.push(adapter.loadMonth(path.join(root, key)));
+    } else {
+      console.warn(`[Reports] missing month folder ${key}`);
+      reports.push(emptyReport(key));
+    }
+  }
+  return reports;
+}
+
+function nextMonthKey(key: string): string {
+  const year = Number(key.slice(0, 4));
+  const month = Number(key.slice(5, 7));
+  return month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+function emptyReport(month: string): MonthReport {
+  return {
+    month,
+    sales: null,
+    categories: null,
+    items: null,
+    providers: null,
+    clients: null,
+    rebooking: null,
+    memberships: null,
+  };
 }

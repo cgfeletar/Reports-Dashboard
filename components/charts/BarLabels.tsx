@@ -21,6 +21,8 @@ export interface BarLabelOptions {
   /** Row key holding unit counts; adds a second `(14)` line under the value. */
   unitsKey?: string;
   fontSize?: number;
+  /** Drop non-selected labels (measured slot too narrow). */
+  hideSecondary?: boolean;
 }
 
 const LIFT = 6;
@@ -36,6 +38,7 @@ export function barLabelContent({
   selectedMonth,
   unitsKey,
   fontSize = 11,
+  hideSecondary = false,
 }: BarLabelOptions) {
   return function BarLabel({ x, y, width, index }: LabelContentProps): ReactElement | null {
     const row = index === undefined ? undefined : data[index];
@@ -47,9 +50,11 @@ export function barLabelContent({
 
     const units = unitsKey ? cellValue(row, unitsKey) : null;
     const selected = isSelected(row, selectedMonth);
+    if (!selected && hideSecondary) return null;
     const lineHeight = fontSize + 1;
     return (
       <text
+        className={selected ? undefined : "chart-label-secondary"}
         x={left + Number(width) / 2}
         textAnchor="middle"
         fontSize={fontSize}

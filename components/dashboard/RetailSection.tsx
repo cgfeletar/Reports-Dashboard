@@ -5,23 +5,27 @@
  * Classification: WRITE NEW
  */
 import { useMemo } from "react";
-import { DonutChart, SmallMultiples } from "@/components/charts";
+import { DonutChart, MonthlyLineChart, SmallMultiples } from "@/components/charts";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { ChartGrid, fullWidthClass } from "@/components/ui/ChartGrid";
 import { Section } from "@/components/ui/Section";
-import { formatCount, formatCurrency, formatCurrencyWhole, formatMonthLong } from "@/lib/format";
-import { categoryMixForMonth, categoryUnitsPanels, rankCategories } from "@/lib/reports-transform";
+import { SINGLE_SERIES } from "@/lib/chart-theme";
+import { formatCount, formatCurrency, formatCurrencyWhole, formatMonthLong, formatPercent } from "@/lib/format";
+import { categoryMixForMonth, categoryUnitsPanels, rankCategories, retailPerClientSeries } from "@/lib/reports-transform";
 import type { MonthKey, MonthReport } from "@/lib/reports-types";
-import { cell, findReport, GAP, toPanels } from "./section-utils";
+import { cell, findReport, GAP, seriesTable, toPanels } from "./section-utils";
 
 interface RetailSectionProps {
   reports: MonthReport[];
   selectedMonth: MonthKey;
 }
 
+const PER_CLIENT_SERIES = [{ key: "value", name: "Retail per client", color: SINGLE_SERIES }];
+
 export function RetailSection({ reports, selectedMonth }: RetailSectionProps): React.JSX.Element {
   const ranked = useMemo(() => rankCategories(reports, "Retail", 6), [reports]);
   const panels = useMemo(() => categoryUnitsPanels(reports, "Retail"), [reports]);
+  const perClient = useMemo(() => retailPerClientSeries(reports), [reports]);
   const report = findReport(reports, selectedMonth);
   const mix = useMemo(
     () => (report ? categoryMixForMonth(report, "Retail", ranked) : { slices: [], total: null }),
@@ -31,8 +35,8 @@ export function RetailSection({ reports, selectedMonth }: RetailSectionProps): R
 
   const mixTable = {
     caption: `Retail sales by category, ${monthLabel}`,
-    columns: ["Category", "Sales before discounts"],
-    rows: mix.slices.map((s) => [s.name, formatCurrency(s.value)]),
+    columns: ["Category", "Sales before discounts", "Share"],
+    rows: mix.slices.map((s) => [s.name, formatCurrency(s.value), formatPercent(s.share, 1)]),
   };
 
   const overTimeTable = {
@@ -63,6 +67,14 @@ export function RetailSection({ reports, selectedMonth }: RetailSectionProps): R
           )}
         </ChartCard>
         <ChartCard
+          title="Retail per client"
+          subtitle="Retail sales divided by clients served"
+          caption="Shows how much retail the average client takes home each month."
+          table={seriesTable(perClient, PER_CLIENT_SERIES, "currency")}
+        >
+          <MonthlyLineChart data={perClient} series={PER_CLIENT_SERIES} selectedMonth={selectedMonth} valueKind="currency" />
+        </ChartCard>
+        <ChartCard
           className={fullWidthClass}
           title="Retail by category over time"
           subtitle="Sales before discounts, with the number of items sold in brackets"
@@ -76,7 +88,7 @@ export function RetailSection({ reports, selectedMonth }: RetailSectionProps): R
             selectedMonth={selectedMonth}
             sharedScale
             labelUnitsKey="units"
-            columns="sm2"
+            columns="lg2"
           />
         </ChartCard>
       </ChartGrid>

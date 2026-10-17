@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NO_CHANGE_TEXT } from "@/components/ui/StatTile";
 import { loadReports } from "@/lib/reports-source";
 import { AtAGlance } from "./AtAGlance";
 import { Dashboard } from "./Dashboard";
@@ -58,6 +59,6 @@ describe("AtAGlance", () => {
     const first = reports[0];
     if (!first) throw new Error("no reports");
     render(<AtAGlance reports={reports} selectedMonth={first.month} />);
-    expect(screen.getAllByText("No prior month").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(NO_CHANGE_TEXT).length).toBeGreaterThan(0);
   });
 });

@@ -13,6 +13,8 @@ import {
   categorySalesSeries,
   categorySeries,
   categoryUnitsPanels,
+  previousMonthKey,
+  retailPerClientSeries,
   clientsSeries,
   discountRateSeries,
   giftCardSeries,
@@ -134,6 +136,14 @@ describe("buildKpis", () => {
     expect(k.utilization.value).toBe(0.8); // staff only
   });
 
+  it("compares with the previous calendar month, not the previous array element", () => {
+    const jan = { ...a, month: "2026-01" };
+    const mar = { ...b, month: "2026-03" };
+    expect(buildKpis([jan, mar], "2026-03").netSales.previous).toBeNull();
+    const dec = { ...a, month: "2025-12" };
+    expect(buildKpis([dec, jan], "2026-01").netSales.previous).toBe(1000);
+  });
+
   it("returns nulls for unknown months or missing data", () => {
     const none = buildKpis([a], "1999-01");
     expect(none.netSales.value).toBeNull();
@@ -196,6 +206,31 @@ describe("revenue series", () => {
     ]);
     expect(rows[0]?.value).toBe(200);
     expect(rows[1]?.value).toBeNull();
+  });
+});
+
+describe("previousMonthKey", () => {
+  it("steps back one calendar month, across years", () => {
+    expect(previousMonthKey("2026-03")).toBe("2026-02");
+    expect(previousMonthKey("2026-01")).toBe("2025-12");
+    expect(previousMonthKey("2026-11")).toBe("2026-10");
+  });
+  it("is null for malformed keys", () => {
+    expect(previousMonthKey("2026-13")).toBeNull();
+    expect(previousMonthKey("nope")).toBeNull();
+  });
+});
+
+describe("retailPerClientSeries", () => {
+  it("divides retail sales by total clients, null when either is unknown or clients is 0", () => {
+    const clients = (totalClients: number) => ({ newClients: 0, returningClients: totalClients, totalClients });
+    const rows = retailPerClientSeries([
+      { ...empty("2026-01"), sales: sales({ retailSales: 200 }), clients: clients(50) },
+      { ...empty("2026-02"), sales: sales({ retailSales: 200 }) },
+      { ...empty("2026-03"), clients: clients(50) },
+      { ...empty("2026-04"), sales: sales({ retailSales: 200 }), clients: clients(0) },
+    ]);
+    expect(rows.map((r) => r.value)).toEqual([4, null, null, null]);
   });
 });
 
@@ -264,8 +299,15 @@ describe("category ranking and mix", () => {
   it("mix is empty with null total when the file is missing; share 0 when total is 0", () => {
     expect(categoryMixForMonth(m3, "Service", ["A"])).toEqual({ slices: [], total: null });
     const zero: MonthReport = { ...empty("z"), categories: [cat("A", "Service", 0, 0), cat("B", "Service", 0, 0)] };
-    const mix = categoryMixForMonth(zero, "Service", ["A"]);
-    expect(mix.slices.map((s) => s.share)).toEqual([0, 0]);
+    expect(categoryMixForMonth(zero, "Service", ["A"])).toEqual({ slices: [], total: 0 });
+  });
+
+  it("drops $0 slices, including an Other that sums to 0", () => {
+    const r: MonthReport = {
+      ...empty("z"),
+      categories: [cat("A", "Service", 1, 100), cat("B", "Service", 1, 0), cat("C", "Service", 1, 0)],
+    };
+    expect(categoryMixForMonth(r, "Service", ["A", "B"]).slices.map((s) => s.name)).toEqual(["A"]);
   });
 
   it("categorySalesSeries is stacked by key with null rows for missing files", () => {
@@ -288,6 +330,31 @@ describe("category ranking and mix", () => {
     ]);
     expect(panels[0]?.color).toBe(CATEGORICAL[0]);
     expect(new Set(panels.map((p) => p.id)).size).toBe(panels.length);
+  });
+
+  it("categoryUnitsPanels excludeAddOns drops add-on-only categories but keeps rank colors", () => {
+    const month: MonthReport = {
+      ...empty("2026-01"),
+      categories: [cat("Facials", "Service", 9, 900), cat("Add-ons", "Service", 4, 100), cat("Massage", "Service", 3, 50)],
+      items: [
+        item({ item: "Facial", category: "Facials" }),
+        item({ item: "Boost", category: "Add-ons", isAddOn: true }),
+        item({ item: "Hot stones", category: "Massage", isAddOn: true }),
+        item({ item: "Swedish", category: "Massage" }),
+      ],
+    };
+    const panels = categoryUnitsPanels([month], "Service", { excludeAddOns: true });
+    expect(panels.map((p) => p.title)).toEqual(["Facials", "Massage"]);
+    expect(panels[1]?.color).toBe(CATEGORICAL[2]);
+    expect(categoryUnitsPanels([month], "Service")).toHaveLength(3);
+  });
+
+  it("excludeAddOns falls back to the category name when items are unknown", () => {
+    const month: MonthReport = {
+      ...empty("2026-01"),
+      categories: [cat("Facials", "Service", 9, 900), cat("Add-On", "Service", 4, 100)],
+    };
+    expect(categoryUnitsPanels([month], "Service", { excludeAddOns: true }).map((p) => p.title)).toEqual(["Facials"]);
   });
 
   it("retail panels carry dollars in value and units separately", () => {
@@ -332,6 +399,25 @@ describe("studioGuestsSeries", () => {
       { ...empty("2026-04"), categories: [cat("Facials", "Service", 1, 1)] },
     ]);
     expect(rows.map((r) => r.guests)).toEqual([60, 74, null, 0]);
+  });
+
+  it("falls back to the Self-guided provider's appointments when items are missing, without spiking", () => {
+    const studio = provider({ provider: "Studio", role: "Self-guided", appointments: 55 });
+    const rows = studioGuestsSeries([
+      { ...empty("2026-01"), categories, items, providers: [studio] },
+      { ...empty("2026-02"), categories, providers: [studio] },
+      { ...empty("2026-03"), providers: [provider({ provider: "A" })] },
+    ]);
+    expect(rows.map((r) => r.guests)).toEqual([60, 55, null]);
+  });
+
+  it("uses items and providers even when the category file is missing", () => {
+    const studio = provider({ provider: "Studio", role: "Self-guided", appointments: 55 });
+    const rows = studioGuestsSeries([
+      { ...empty("2026-01"), items },
+      { ...empty("2026-02"), providers: [studio] },
+    ]);
+    expect(rows.map((r) => r.guests)).toEqual([60, 55]);
   });
 });
 

@@ -26,10 +26,33 @@ export interface DonutChartProps {
   height?: number;
 }
 
+/**
+ * Whole-number percentages of `values` that sum to exactly 100 (largest
+ * remainder), so the legend never reads 99% or 101%.
+ */
+export function sharePercents(values: readonly number[]): number[] {
+  const total = values.reduce((sum, v) => sum + v, 0);
+  if (total <= 0) return values.map(() => 0);
+  const exact = values.map((v) => (v / total) * 100);
+  const floors = exact.map(Math.floor);
+  let leftover = 100 - floors.reduce((sum, f) => sum + f, 0);
+  const byRemainder = exact
+    .map((value, index) => ({ index, remainder: value - Math.floor(value) }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+  for (const { index } of byRemainder) {
+    if (leftover <= 0) break;
+    floors[index] = (floors[index] ?? 0) + 1;
+    leftover -= 1;
+  }
+  return floors;
+}
+
 export function DonutChart({ slices, centerLabel, centerValue, height = 240 }: DonutChartProps): ReactElement {
   const reduced = useReducedMotion();
-  const total = slices.reduce((sum, s) => sum + s.value, 0);
+  const visible = slices.filter((s) => s.value > 0);
+  const total = visible.reduce((sum, s) => sum + s.value, 0);
   const share = (value: number): number => (total > 0 ? value / total : 0);
+  const percents = sharePercents(visible.map((s) => s.value));
 
   return (
     <div className="flex flex-col items-center gap-6 md:flex-row md:gap-8">
@@ -54,7 +77,7 @@ export function DonutChart({ slices, centerLabel, centerValue, height = 240 }: D
               }}
             />
             <Pie
-              data={slices.map((s) => ({ ...s, fill: s.color }))}
+              data={visible.map((s) => ({ ...s, fill: s.color }))}
               dataKey="value"
               nameKey="name"
               name={centerLabel}
@@ -75,14 +98,14 @@ export function DonutChart({ slices, centerLabel, centerValue, height = 240 }: D
         </div>
       </div>
       <ul className="w-full min-w-0 flex-1 space-y-2 text-[13px]">
-        {slices.map((slice) => (
+        {visible.map((slice, i) => (
           <li key={slice.key} className="flex items-center gap-2.5">
             <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ backgroundColor: slice.color }} />
             <span className="min-w-0 flex-1 text-ink">{slice.name}</span>
             <span className="tabular-nums text-ink" title={formatCurrency(slice.value)}>
               {formatCurrencyWhole(slice.value)}
             </span>
-            <span className="w-11 text-right tabular-nums text-ink-soft">{formatPercent(share(slice.value))}</span>
+            <span className="w-11 text-right tabular-nums text-ink-soft">{percents[i] ?? 0}%</span>
           </li>
         ))}
       </ul>
