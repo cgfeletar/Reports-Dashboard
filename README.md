@@ -15,7 +15,7 @@ Next.js 15 (App Router) · TypeScript · Tailwind v4 · Recharts 3 · Vitest · 
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000 (no password needed in dev unless SITE_PASSWORD is set)
+npm run dev          # http://localhost:3000 (no password needed unless SITE_PASSWORD is set)
 ```
 
 | Script | What it does |
@@ -91,7 +91,8 @@ export const business = {
 };
 ```
 
-The header eyebrow and page title use these values. Never commit a real business name to the repo;
+The dashboard header eyebrow is fixed to "Wellness Spa"; the page title, meta description and
+empty-state header use these values. Never commit a real business name to the repo;
 set it on that deploy instead. While `isDemo` is true the page shows the "Sample data" pill and sends
 `noindex, nofollow`.
 
@@ -101,8 +102,8 @@ set it on that deploy instead. While `isDemo` is true the page shows the "Sample
 
 | Env var | Required | Purpose |
 |---|---|---|
-| `SITE_PASSWORD` | **Yes** (production) | Password for the gate. Without it, production returns `503` (fails closed). |
-| `NEXT_PUBLIC_BUSINESS_NAME` | No | Business name shown in the header eyebrow and title. |
+| `SITE_PASSWORD` | No | Password for the gate. Unset or empty → the site is public. |
+| `NEXT_PUBLIC_BUSINESS_NAME` | No | Business name used in the meta description and empty-state header (the dashboard eyebrow is fixed to "Wellness Spa"). |
 | `NEXT_PUBLIC_BUSINESS_SHORT` | No | Short name used in the browser tab title. |
 | `NEXT_PUBLIC_DEMO` | No | `false` hides the "Sample data" pill and removes `noindex`. Default: demo mode on. |
 | `REPORTS_DIR` | No | Folder of `YYYY-MM` report folders, relative to the repo root. Default: `reports`. |
@@ -111,7 +112,8 @@ set it on that deploy instead. While `isDemo` is true the page shows the "Sample
 
 ## Password gate
 
-`middleware.ts` (Edge runtime) protects every route except Next's static assets and the favicon:
+`middleware.ts` (Edge runtime) is off unless `SITE_PASSWORD` is set. When set, it protects every
+route except Next's static assets and the favicon:
 
 1. A valid `session` cookie → allowed.
 2. Otherwise the browser's Basic-auth prompt; any username, correct password → allowed, and a

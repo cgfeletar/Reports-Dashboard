@@ -99,6 +99,19 @@ export function formatCurrencyCompact(value: number): string {
   return scaled(abs / 1_000_000, "M");
 }
 
+// ── People ───────────────────────────────────────────────────────────────────
+
+/**
+ * First name + last initial, for display only: `"Ava Lindqvist"` → `"Ava L."`.
+ * Single-word names are returned as is.
+ */
+export function formatProviderName(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  const first = parts[0] ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1] : undefined;
+  return last ? `${first} ${last.charAt(0).toUpperCase()}.` : first;
+}
+
 /** `1,234` */
 export function formatCount(value: number): string {
   return count.format(value);

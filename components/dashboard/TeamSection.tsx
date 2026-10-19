@@ -11,7 +11,7 @@ import type { BarListItem } from "@/components/ui/BarList";
 import { ChartCard } from "@/components/ui/ChartCard";
 import { ChartGrid, fullWidthClass } from "@/components/ui/ChartGrid";
 import { Section } from "@/components/ui/Section";
-import { formatCurrency, formatCurrencyWhole, formatMonthLong, formatPercent } from "@/lib/format";
+import { formatCurrency, formatCurrencyWhole, formatMonthLong, formatPercent, formatProviderName } from "@/lib/format";
 import { teamPerformance, utilizationPanels } from "@/lib/reports-transform";
 import type { MonthKey, MonthReport } from "@/lib/reports-types";
 import { cell, findReport, toPanels } from "./section-utils";
@@ -26,12 +26,15 @@ const pct = (v: number): string => formatPercent(v);
 export function TeamSection({ reports, selectedMonth }: TeamSectionProps): React.JSX.Element {
   const report = findReport(reports, selectedMonth);
   const team = useMemo(() => (report ? teamPerformance(report) : []), [report]);
-  const panels = useMemo(() => utilizationPanels(reports), [reports]);
+  const panels = useMemo(
+    () => utilizationPanels(reports).map((p) => ({ ...p, title: formatProviderName(p.title) })),
+    [reports],
+  );
   const monthLabel = formatMonthLong(selectedMonth);
 
   const items: BarListItem[] = team.map((m) => ({
     id: m.name,
-    name: m.name,
+    name: formatProviderName(m.name),
     meta: m.role,
     value: m.serviceSales,
     valueLabel: formatCurrencyWhole(m.serviceSales),
@@ -42,7 +45,7 @@ export function TeamSection({ reports, selectedMonth }: TeamSectionProps): React
     caption: `Team performance, ${monthLabel}`,
     columns: ["Provider", "Role", "Service sales", "Utilization", "Rebook rate", "Retail sales"],
     rows: team.map((m) => [
-      m.name,
+      formatProviderName(m.name),
       m.role,
       formatCurrency(m.serviceSales),
       cell(m.utilization, pct),

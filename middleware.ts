@@ -1,5 +1,5 @@
 /**
- * Site-wide password gate. A valid session cookie passes; otherwise HTTP Basic
+ * Site-wide password gate, off unless SITE_PASSWORD is set. A valid session cookie passes; otherwise HTTP Basic
  * auth (username ignored) is checked against SITE_PASSWORD and, on success,
  * a signed session cookie is issued so browsers stop re-prompting.
  * Runs on the Edge runtime: Web APIs only (no node:crypto, no Buffer).
@@ -56,10 +56,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const password = process.env.SITE_PASSWORD;
   const isProd = process.env.NODE_ENV === "production";
 
-  if (!password) {
-    if (!isProd) return NextResponse.next();
-    return new NextResponse("Site password not configured", { status: 503, headers: { "Cache-Control": "no-store" } });
-  }
+  // No password configured: the site is public.
+  if (!password) return NextResponse.next();
 
   const token = await sessionToken(password);
 

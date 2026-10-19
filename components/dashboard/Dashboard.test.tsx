@@ -21,7 +21,7 @@ beforeAll(() => {
 describe("Dashboard", () => {
   it("renders header, demo pill, month select and all sections in order", () => {
     render(<Dashboard reports={reports} business={business} />);
-    expect(screen.getByText("Test Spa")).toBeInTheDocument();
+    expect(screen.getByText("Wellness Spa")).toBeInTheDocument();
     expect(screen.getByText("Sample data")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Month" })).toHaveTextContent("September 2026");
 

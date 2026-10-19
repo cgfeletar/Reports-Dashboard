@@ -80,15 +80,15 @@ describe("middleware", () => {
     expect((await middleware(req({ authorization: `Basic ${btoa("u:\xff\xfe")}` }))).status).toBe(401);
   });
 
-  it("bypasses auth in development when SITE_PASSWORD is unset", async () => {
+  it("is public in development when SITE_PASSWORD is unset", async () => {
     vi.stubEnv("SITE_PASSWORD", "");
     expect(isPass(await middleware(req()))).toBe(true);
   });
 
-  it("fails closed with 503 in production when SITE_PASSWORD is unset", async () => {
+  it("is public in production when SITE_PASSWORD is unset", async () => {
     vi.stubEnv("SITE_PASSWORD", "");
     vi.stubEnv("NODE_ENV", "production");
-    expect((await middleware(req())).status).toBe(503);
+    expect(isPass(await middleware(req()))).toBe(true);
   });
 
   it("supports passwords containing colons and non-ASCII characters", async () => {
