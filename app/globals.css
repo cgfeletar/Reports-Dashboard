@@ -17,6 +17,15 @@
   --font-display: var(--font-playfair), ui-serif, Georgia, serif;
 
   --breakpoint-xs: 35rem; /* 560px */
+
+  /* caitlynfeletar.com palette and type, used only by the site bar on the demo. */
+  --color-site-morning: #e9eddc;
+  --color-site-cream: #fbf3de;
+  --color-site-fir: #22301f;
+  --color-site-cedar: #3d4e34;
+  --color-site-moss: #9db47f;
+  --font-site-display: var(--font-inria), Georgia, serif;
+  --font-site-mono: var(--font-plex), ui-monospace, monospace;
 }
 
 html {
